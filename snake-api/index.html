@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Snake Neon Gamer+</title>
+
+<style>
+  body {
+    margin: 0;
+    background: radial-gradient(circle, #050505, #000000);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+    color: #00ffcc;
+    font-family: 'Courier New', monospace;
+  }
+
+  canvas {
+    background: #020202;
+    border: 2px solid #00ffcc;
+    box-shadow: 0 0 20px #00ffcc, 0 0 40px #00ffcc;
+  }
+
+  .hud {
+    margin-bottom: 10px;
+    font-size: 22px;
+    text-shadow: 0 0 10px #00ffcc;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="hud">
+  ⚡ SCORE: <span id="score">0</span>
+</div>
+
+<canvas id="game" width="400" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const grid = 20;
+let count = 0;
+let score = 0;
+
+let particles = [];
+
+let snake = {
+  x: 160,
+  y: 160,
+  dx: grid,
+  dy: 0,
+  cells: [],
+  maxCells: 4
+};
+
+let apple = {
+  x: 320,
+  y: 320
+};
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function createParticles(x, y) {
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      x: x + 10,
+      y: y + 10,
+      dx: (Math.random() - 0.5) * 4,
+      dy: (Math.random() - 0.5) * 4,
+      life: 20
+    });
+  }
+}
+
+function drawParticles() {
+  particles.forEach((p, index) => {
+    ctx.fillStyle = "#00ffcc";
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "#00ffcc";
+    ctx.fillRect(p.x, p.y, 3, 3);
+    ctx.shadowBlur = 0;
+
+    p.x += p.dx;
+    p.y += p.dy;
+    p.life--;
+
+    if (p.life <= 0) particles.splice(index, 1);
+  });
+}
+
+function gameOver() {
+  alert("💀 GAME OVER | SCORE: " + score);
+  location.reload();
+}
+
+function drawGrid() {
+  ctx.strokeStyle = "#003333";
+  for (let i = 0; i < canvas.width; i += grid) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, canvas.height);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(canvas.width, i);
+    ctx.stroke();
+  }
+}
+
+function drawApple() {
+  ctx.beginPath();
+  ctx.arc(apple.x + 10, apple.y + 10, 8, 0, Math.PI * 2);
+  ctx.fillStyle = "#ff0055";
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = "#ff0055";
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function loop() {
+  requestAnimationFrame(loop);
+
+  if (++count < 4) return;
+  count = 0;
+
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawGrid();
+
+  snake.x += snake.dx;
+  snake.y += snake.dy;
+
+  if (snake.x < 0) snake.x = canvas.width - grid;
+  else if (snake.x >= canvas.width) snake.x = 0;
+
+  if (snake.y < 0) snake.y = canvas.height - grid;
+  else if (snake.y >= canvas.height) snake.y = 0;
+
+  snake.cells.unshift({ x: snake.x, y: snake.y });
+
+  if (snake.cells.length > snake.maxCells) {
+    snake.cells.pop();
+  }
+
+  drawApple();
+  drawParticles();
+
+  snake.cells.forEach((cell, index) => {
+    ctx.fillStyle = index === 0 ? "#00ffff" : "#00cc99";
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "#00ffcc";
+    ctx.fillRect(cell.x, cell.y, grid - 2, grid - 2);
+    ctx.shadowBlur = 0;
+
+    if (cell.x === apple.x && cell.y === apple.y) {
+      snake.maxCells++;
+      score++;
+      document.getElementById("score").innerText = score;
+
+      createParticles(apple.x, apple.y);
+
+      apple.x = getRandomInt(0, 20) * grid;
+      apple.y = getRandomInt(0, 20) * grid;
+    }
+
+    for (let i = index + 1; i < snake.cells.length; i++) {
+      if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+        gameOver();
+      }
+    }
+  });
+}
+
+// controles
+document.addEventListener("keydown", function (e) {
+  if (e.key === "ArrowLeft" && snake.dx === 0) {
+    snake.dx = -grid; snake.dy = 0;
+  } else if (e.key === "ArrowUp" && snake.dy === 0) {
+    snake.dy = -grid; snake.dx = 0;
+  } else if (e.key === "ArrowRight" && snake.dx === 0) {
+    snake.dx = grid; snake.dy = 0;
+  } else if (e.key === "ArrowDown" && snake.dy === 0) {
+    snake.dy = grid; snake.dx = 0;
+  }
+});
+
+requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>
